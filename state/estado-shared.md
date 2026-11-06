@@ -1,9 +1,10 @@
 # Estado — Módulo transversal: `shared`
 
-**Estado global:** no iniciado. Este módulo **no es un bounded context**: es el kernel técnico
-que los 7 BCs reutilizan. Se implementa **antes** de arrancar Identidad y acceso, porque los
-cinco agentes (`domain`, `infrastructure`, `application`, `interfaces`, `tests`) asumen que
-las clases base ya existen.
+**Estado global:** **listo**. Las 9 clases están portadas, compilando en `./mvnw compile` y
+con tests verdes para `Result` y `ApplicationError`. Identidad y acceso ya puede arrancar.
+
+Paquete raíz final: `com.olimpiadas369.backend.shared` (debajo del paquete de
+`BackendApplication` para que el auto-scan de Spring Boot las detecte sin configuración extra).
 
 ## Alcance
 
@@ -60,6 +61,19 @@ Nada de aquí es dominio de negocio. Es infraestructura común + primitivas DDD/
 
 ## Handoff para el siguiente agente
 
-Vacío — todavía no arrancó el flujo. El agente `domain` de `shared` (o el primero que arranque
-este módulo) debe inicializar el handoff con: paquete raíz final, qué clases se portaron,
-qué se tocó al portar, y qué dependencias agregó en `pom.xml`.
+- **Paquete raíz:** `com.olimpiadas369.backend.shared`.
+- **Clases portadas (9):** `AbstractDomainAggregateRoot`, `Result`, `ApplicationError`,
+  `LocaleConfiguration`, `ErrorResource`, `MessageResource`, `ErrorResponseAssembler`,
+  `ResponseEntityAssembler`, `GlobalExceptionHandler`.
+- **Qué se tocó al portar:** solo el paquete. Semántica y firmas intactas.
+- **Dependencias nuevas en `pom.xml`:** `org.jspecify:jspecify:1.0.0`. Lombok y Spring
+  Security ya estaban — se conservan los handlers de `AccessDeniedException` y
+  `AuthenticationException` y el `@Slf4j` en `GlobalExceptionHandler`. Si el ADR de Identidad
+  descarta Spring Security, esos dos handlers caen (ver `state/pendientes.md`).
+- **Bundles i18n:** `src/main/resources/messages.properties` (es, default) y `messages_en.properties`
+  con claves genéricas (`error.validation.message`, `error.not-found.message`, etc.). Cada BC
+  puede añadir claves específicas (`error.<code-kebab>.message`) sin tocar `shared`.
+- **Tests:** `ResultTest` (6 casos) y `ApplicationErrorTest` (6 casos). Ambos verdes.
+- **Siguiente agente (Identidad, `domain`)** debe: extender `AbstractDomainAggregateRoot<Usuario>`,
+  devolver `Result<T, ApplicationError>` desde los handlers de `application`, y usar
+  `ResponseEntityAssembler.toResponseEntityFromResult(...)` en los controllers REST.

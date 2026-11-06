@@ -6,10 +6,8 @@ coordina vía `state/estado-<bc>.md`). Se mantiene vivo: cuando algo se cierra, 
 
 ## Módulo `shared` (paso cero, antes del primer BC)
 
-- [ ] Portar las 9 clases de `references/shared/` a `com.olimpiadas369.shared` siguiendo el
-  inventario de [`state/estado-shared.md`](estado-shared.md). `references/` está gitignoreado:
-  es material local de referencia, no se sube. Sin `shared` listo, Identidad y acceso no puede
-  arrancar (todos sus handlers devuelven `Result<T, ApplicationError>`).
+- [x] ~~Portar las 9 clases de `references/shared/` a `com.olimpiadas369.backend.shared`~~ —
+  hecho en `feature/shared`. Ver [`state/estado-shared.md`](estado-shared.md).
 
 ## Documentación transversal (bloquea a los agentes)
 
