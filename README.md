@@ -80,8 +80,8 @@ docker compose up -d        # levanta Postgres local
 ./mvnw verify               # tests (perfil test con H2 en memoria)
 ```
 
-Variables de entorno (perfil `dev`): se cargan desde `.env` (nunca commiteado). Ver
-`state/pendientes.md` para el `.env.example` todavía por escribir.
+Variables de entorno (perfil `dev`): copia `.env.example` a `.env` (nunca commiteado) y rellena
+los valores. `compose.yaml` y `application-dev.properties` leen las mismas variables `DB_*`.
 
 ## Convenciones
 

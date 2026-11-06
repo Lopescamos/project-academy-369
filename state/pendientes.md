@@ -33,13 +33,19 @@ coordina vía `state/estado-<bc>.md`). Se mantiene vivo: cuando algo se cierra, 
 
 ## Infra / entorno
 
-- [ ] Perfiles Spring (`application-dev.yml`, `application-prod.yml`, `application-test.yml`)
-  todavía no creados — el repo arranca con la configuración por defecto de Initializr.
+- [x] ~~Perfiles Spring (`dev`, `prod`, `test`) y `.env.example`~~ — hechos como
+  `application-*.properties`; `compose.yaml` alineado con las variables `DB_*`.
+- [ ] `SnakeCaseWithPluralizedTablePhysicalNamingStrategy` en
+  `shared/infrastructure/persistence/jpa/configuration/strategy/` (no existe en `references/`,
+  hay que escribirla). Luego descomentar `spring.jpa.properties.hibernate.physical_naming_strategy`
+  en `application.properties`. Bloquea la primera entidad JPA (Identidad).
+- [ ] Dependencias que las propiedades ya anticipan pero el `pom.xml` aún no tiene: `jjwt`
+  (Identidad), `spring-boot-starter-mail` (Identidad), `springdoc-openapi` (ver ítem de arriba),
+  `firebase-admin` (Imágenes), `poi`/`poi-ooxml` (Exportación). Agregar cada una con su BC.
+- [ ] `BackendApplicationTests` (scaffold de Initializr) usa Testcontainers y requiere Docker
+  corriendo; `CLAUDE.md` define H2 en el perfil `test`. Decidir si se pasa a `@ActiveProfiles("test")`.
 - [ ] `Dockerfile` multi-stage (`eclipse-temurin:21-jdk-alpine` → `-jre-alpine`) pendiente.
 - [ ] Workflow de GitHub Actions (build → test → deploy a Render vía Deploy Hook) pendiente.
-- [ ] `.env.example` en la raíz que documente las variables que el perfil `dev` espera
-  (credenciales Postgres local, API key del proveedor de visión, credenciales Firebase Admin).
-  El `.env` real nunca se commitea.
 
 ## Convenciones de uso
 
