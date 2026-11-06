@@ -4,6 +4,13 @@ Este archivo lista lo que falta hacer fuera del flujo normal de un bounded conte
 coordina vía `state/estado-<bc>.md`). Se mantiene vivo: cuando algo se cierra, se mueve a su
 `estado-<bc>.md` correspondiente o se borra de aquí.
 
+## Módulo `shared` (paso cero, antes del primer BC)
+
+- [ ] Portar las 9 clases de `references/shared/` a `com.olimpiadas369.shared` siguiendo el
+  inventario de [`state/estado-shared.md`](estado-shared.md). `references/` está gitignoreado:
+  es material local de referencia, no se sube. Sin `shared` listo, Identidad y acceso no puede
+  arrancar (todos sus handlers devuelven `Result<T, ApplicationError>`).
+
 ## Documentación transversal (bloquea a los agentes)
 
 - [ ] **`docs/guia-arquitectura-por-capas-ddd.md`** — todavía no existe. Es la única fuente de

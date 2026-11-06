@@ -23,6 +23,13 @@ desarrollo en `state/`.
 Deploy objetivo: **Render** (backend) + **Firebase Hosting** (Angular) + **Supabase** (DB) +
 **Firebase Storage** (imágenes).
 
+## Módulo `shared` (paso cero)
+
+Kernel técnico reutilizado por todos los BCs: `AbstractDomainAggregateRoot`, `Result<T, E>`,
+`ApplicationError`, `GlobalExceptionHandler`, resources y assemblers REST, configuración i18n.
+No es un bounded context — se implementa **antes** del primer BC. Ver
+[`state/estado-shared.md`](state/estado-shared.md).
+
 ## Bounded Contexts
 
 Monolito modular, DDD por capas. Orden de implementación (manda la dependencia entre tablas):
