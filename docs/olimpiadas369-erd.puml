@@ -1,0 +1,226 @@
+@startuml Olimpiadas369-ERD
+' Diagrama Entidad-Relación de Olimpiadas 369
+' PlantUML ER-ish con "entity" y relaciones por FK.
+
+!define PK(x) <b><color:#B8860B>x</color></b>
+!define FK(x) <color:#1E88E5>x</color>
+!define U(x)  <u>x</u>
+
+hide circle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam defaultFontName "Helvetica"
+
+' ─────────── Identidad y acceso ───────────
+entity usuario {
+  PK(id) : BIGSERIAL
+  --
+  nombre_completo : VARCHAR(160)
+  U(correo) : VARCHAR(160)
+  password_hash : VARCHAR(255)
+  rol : rol_usuario
+  estado : estado_usuario
+  desactivado_en : TIMESTAMPTZ
+  created_at : TIMESTAMPTZ
+  updated_at : TIMESTAMPTZ
+}
+
+entity usuario_sede {
+  PK(id) : BIGSERIAL
+  --
+  FK(usuario_id) : BIGINT
+  FK(sede_id) : BIGINT
+  fecha_asignacion : TIMESTAMPTZ
+  activo_en_sede : BOOLEAN
+}
+
+entity auditoria_accion {
+  PK(id) : BIGSERIAL
+  --
+  FK(usuario_id) : BIGINT
+  accion : VARCHAR(60)
+  entidad : VARCHAR(40)
+  entidad_id : BIGINT
+  detalle_json : JSONB
+  created_at : TIMESTAMPTZ
+}
+
+' ─────────── Dominio principal ───────────
+entity sede {
+  PK(id) : BIGSERIAL
+  --
+  nombre : VARCHAR(120)
+  direccion : VARCHAR(255)
+  fecha_evento : DATE
+  estado : VARCHAR(20)
+  created_at : TIMESTAMPTZ
+  updated_at : TIMESTAMPTZ
+}
+
+entity colegio {
+  PK(id) : BIGSERIAL
+  --
+  U(nombre) : VARCHAR(160)
+  nombre_normalizado : VARCHAR(160)
+  created_at : TIMESTAMPTZ
+  updated_at : TIMESTAMPTZ
+}
+
+entity apellido_comun {
+  PK(id) : BIGSERIAL
+  --
+  U(apellido) : VARCHAR(80)
+  apellido_normalizado : VARCHAR(80)
+}
+
+entity bloque {
+  PK(id) : BIGSERIAL
+  --
+  FK(sede_id) : BIGINT
+  curso : curso
+  nivel : nivel
+  grado : grado
+  FK(tutor_asignado_id) : BIGINT
+  bloqueado_desde : TIMESTAMPTZ
+  completado : BOOLEAN
+  completado_en : TIMESTAMPTZ
+  FK(completado_por_id) : BIGINT
+  created_at : TIMESTAMPTZ
+  updated_at : TIMESTAMPTZ
+}
+
+entity clave_respuestas {
+  PK(id) : BIGSERIAL
+  --
+  curso : curso
+  nivel : nivel
+  grado : grado
+  FK(creado_por_id) : BIGINT
+  version : INT
+  created_at : TIMESTAMPTZ
+  updated_at : TIMESTAMPTZ
+}
+
+entity clave_respuesta_detalle {
+  PK(id) : BIGSERIAL
+  --
+  FK(clave_respuestas_id) : BIGINT
+  numero_pregunta : SMALLINT
+  opcion_correcta : VARCHAR(2)
+}
+
+entity clave_correccion {
+  PK(id) : BIGSERIAL
+  --
+  FK(clave_respuestas_id) : BIGINT
+  tipo : tipo_correccion_clave
+  numero_pregunta : SMALLINT
+  opcion_anterior : VARCHAR(2)
+  opcion_nueva : VARCHAR(2)
+  motivo : TEXT
+  FK(aplicado_por_id) : BIGINT
+  fichas_recalculadas : INT
+  created_at : TIMESTAMPTZ
+}
+
+entity lote {
+  PK(id) : BIGSERIAL
+  --
+  FK(bloque_id) : BIGINT
+  FK(tutor_id) : BIGINT
+  estado : estado_lote
+  total_fotos_esperadas : INT
+  total_fotos_recibidas : INT
+  ultima_foto_tomada_at : TIMESTAMPTZ
+  created_at : TIMESTAMPTZ
+  updated_at : TIMESTAMPTZ
+}
+
+entity imagen {
+  PK(id) : BIGSERIAL
+  --
+  FK(lote_id) : BIGINT
+  orden_en_lote : INT
+  storage_path : VARCHAR(500)
+  storage_path_censurada : VARCHAR(500)
+  bytes : BIGINT
+  hash_sha256 : VARCHAR(64)
+  FK(reemplaza_imagen_id) : BIGINT
+  created_at : TIMESTAMPTZ
+}
+
+entity registro {
+  PK(id) : BIGSERIAL
+  --
+  FK(lote_id) : BIGINT
+  FK(bloque_id) : BIGINT
+  FK(imagen_id) : BIGINT
+  nombre : VARCHAR(120)
+  apellidos : VARCHAR(120)
+  FK(colegio_id) : BIGINT
+  colegio_texto_extraido : VARCHAR(160)
+  hora_finalizacion : TIME
+  correctas : SMALLINT
+  incorrectas : SMALLINT
+  anuladas : SMALLINT
+  blancos : SMALLINT
+  puntaje : INT
+  estado : estado_registro
+  tiene_observacion : BOOLEAN
+  confianza_promedio : NUMERIC(4,3)
+  FK(revisor_actual_id) : BIGINT
+  revisor_tomada_at : TIMESTAMPTZ
+  FK(confirmado_por_id) : BIGINT
+  confirmado_at : TIMESTAMPTZ
+  created_at : TIMESTAMPTZ
+  updated_at : TIMESTAMPTZ
+}
+
+entity respuesta_alumno {
+  PK(id) : BIGSERIAL
+  --
+  FK(registro_id) : BIGINT
+  numero_pregunta : SMALLINT
+  opcion_marcada : opcion
+  es_correcta : BOOLEAN
+  estados_opciones_json : JSONB
+  revisada_por_humano : BOOLEAN
+  created_at : TIMESTAMPTZ
+  updated_at : TIMESTAMPTZ
+}
+
+' ─────────── Relaciones ───────────
+usuario       ||--o{ usuario_sede
+sede          ||--o{ usuario_sede
+usuario       ||--o{ auditoria_accion
+
+sede          ||--o{ bloque
+usuario       ||--o{ bloque : "tutor_asignado"
+usuario       ||--o{ bloque : "completado_por"
+
+bloque        ||--o{ lote
+usuario       ||--o{ lote : "tutor"
+lote          ||--o{ imagen
+lote          ||--o{ registro
+bloque        ||--o{ registro
+
+imagen        ||--o{ imagen : "reemplaza"
+imagen        ||--|| registro : "vigente"
+
+colegio       ||--o{ registro
+registro      ||--o{ respuesta_alumno
+
+clave_respuestas ||--o{ clave_respuesta_detalle
+clave_respuestas ||--o{ clave_correccion
+usuario          ||--o{ clave_respuestas : "creada_por"
+usuario          ||--o{ clave_correccion   : "aplicada_por"
+
+usuario       ||--o{ registro : "revisor_actual"
+usuario       ||--o{ registro : "confirmado_por"
+
+' Nota: clave_respuestas NO tiene FK directa a bloque — se resuelve
+' en runtime por (curso, nivel, grado) para que una clave sirva en
+' todas las sedes. Esta relación lógica se dibuja con línea punteada:
+clave_respuestas ..> bloque : "aplica a (curso,nivel,grado)"
+
+@enduml
