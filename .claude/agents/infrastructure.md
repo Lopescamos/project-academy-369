@@ -13,7 +13,8 @@ necesita está en los archivos que lee a continuación, incluido lo que dejó el
    tienes que implementar. No agregues métodos al puerto del dominio: si falta uno, es señal de
    que hay que volver atrás, no de que debas improvisar en el adapter.
 3. La sección `## Domain (dejado por el agente domain)` en `state/estado-<bc>.md`, si existe.
-4. `docs/modelo-bd.puml` (o el ERD equivalente) — nombres de tabla, columnas, tipos y
+4. El ERD del proyecto en `docs/` (revisa `CLAUDE.md` para el nombre exacto del archivo) —
+   nombres de tabla, columnas, tipos y
    constraints exactos. La migración que vas a crear/editar debe coincidir con esto.
 5. Las migraciones ya existentes (`src/main/resources/db/migration/`) para seguir el mismo
    estilo y saber qué número de versión sigue.
@@ -38,11 +39,29 @@ Dentro de `src/main/java/.../<bc>/infrastructure/`:
   proyecto ya tiene un `ApplicationEventPublisher` inyectado en otro adapter y sigue el mismo
   patrón.
 - Si el BC necesita una integración externa nueva (un proveedor de almacenamiento, correo, un
-  proceso programado, etc.), sigue la guía de arquitectura completa para decidir dónde va el
-  puerto (`domain/services` vs. `application/internal/outboundservices`) — pero el puerto en sí
-  no lo creas tú si ya lo hizo `domain`; aquí solo va la implementación.
+  proceso programado, etc.): el puerto en sí no lo creas tú si ya lo declaró `domain` o
+  `application` — aquí solo va la implementación, en `<capacidad>/[<proveedor>/]`. Sigue la
+  sección 4.1 de la guía para decidir si va plana o con subcarpeta de proveedor (subcarpeta
+  cuando coexiste un proveedor real y uno simulado/logging, o cuando la capacidad es genérica y
+  reutilizable entre proyectos). La configuración (API key, timeout, flags) va en una clase
+  `Settings` — sección 4.2 de la guía dice si vive en la raíz de la capacidad o dentro de la
+  subcarpeta del proveedor —, nunca credenciales hardcodeadas en el código.
+- `config/` — clases `@Configuration` propias de este BC, si hace falta alguna.
+- `scheduling/` — jobs `@Scheduled` (opcional; solo si este BC necesita uno).
+- `startup/` — tareas que corren una vez al arrancar la app con
+  `@EventListener(ApplicationReadyEvent.class)` (opcional; p. ej. retomar algo que quedó a medias
+  si el servidor se cayó).
+- Si este BC necesita filtros o configuración de seguridad de Spring (más allá de generar o
+  validar un token), eso va en `security/`, separado de la implementación del mecanismo en sí
+  (p. ej. `tokens/jwt/`).
 - Si hay una migración nueva, créala siguiendo el patrón de nomenclatura de las anteriores
   (nunca editar una ya aplicada).
+
+Antes de terminar, repasa el checklist de la sección 9 de la guía que te toca a ti (entity
+extiende la clase base de auditoría sin redeclarar id/createdAt/updatedAt, assembler final con
+constructor privado y el `if (id != null)` antes de asignar, ninguna credencial hardcodeada —
+siempre por una clase `Settings` leyendo variables de entorno, subcarpeta por proveedor solo si
+coexisten dos implementaciones, un cronjob o tarea de arranque nunca suelto en `application`).
 
 Al terminar, añade a `state/estado-<bc>.md` una sección
 `## Infrastructure (dejado por el agente infrastructure)` resumiendo entities, assemblers,

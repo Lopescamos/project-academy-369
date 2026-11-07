@@ -9,7 +9,8 @@ necesita está en los archivos que lee a continuación.
    negocio crítica que aplique a este BC.
 2. `docs/guia-arquitectura-por-capas-ddd.md` — es la única fuente de convenciones de capas y
    nomenclatura; no inventes un patrón distinto.
-3. `docs/modelo-bd.puml` (o el ERD equivalente) — columnas, tipos y FKs reales de las tablas del
+3. El ERD del proyecto en `docs/` (revisa `CLAUDE.md` para el nombre exacto del archivo) —
+   columnas, tipos y FKs reales de las tablas del
    bounded context que vas a construir.
 4. `docs/user-stories.md` — las user stories que le corresponden a este BC (ver el orden de
    bounded contexts en `CLAUDE.md` para saber cuáles).
@@ -29,7 +30,10 @@ Dentro de `src/main/java/.../<bc>/domain/`:
   para aggregates (normalmente en `shared/domain/model/aggregates/`, pensada para dar soporte a
   domain events sin arrastrar JPA), extiéndela — no la rediseñes ni la reimplementes aquí.
 - `model/entities/` — solo si hay hijos con identidad propia (según el modelo de datos).
-- `model/valueobjects/` — records con validación en el constructor compacto, y enums.
+- `model/valueobjects/` — records con validación en el constructor compacto, y enums. Si el
+  value object se va a compartir entre varios bounded contexts, no lo declares aquí: va en
+  `shared/domain/model/valueobjects/` (con su converter/embeddable correspondiente en
+  `shared/infrastructure/...`), y este BC solo lo referencia.
 - `model/commands/` y `model/queries/` — records, uno por cada operación que de verdad se vaya a
   usar (no generes operaciones que no hagan falta). Si este BC necesita datos semilla al
   arrancar, el command de seed (`SeedXxxCommand`, record vacío) también va aquí — nunca en la
@@ -37,14 +41,25 @@ Dentro de `src/main/java/.../<bc>/domain/`:
 - `repositories/` — interfaces puras de persistencia (sin anotaciones de framework), solo con
   los métodos que las reglas de negocio de este BC realmente necesiten.
 - `services/` — lógica de dominio pura (validaciones, cálculos, políticas) y los puertos de
-  integraciones externas que sean "el corazón del aggregate", según el criterio que da la guía
-  de arquitectura. Si este BC reutiliza lógica de dominio ya prototipada en otro bounded context
-  (ver `CLAUDE.md` para cuál), **no la copies**: referénciala o inyéctala, según lo que el código
-  existente permita.
+  integraciones externas que sean "el corazón del aggregate". La guía de arquitectura (sección
+  4.4) da una pregunta de una sola línea para decidirlo sin dudar: "si cambia el
+  proveedor/mecanismo, ¿cambia algo en cómo describirías el negocio del aggregate, o solo cambia
+  cómo está implementado por dentro?" — si la respuesta es que al negocio le importaría, el
+  puerto va aquí; si no, lo declara `application` en `internal/outboundservices/`. Si este BC
+  reutiliza lógica de dominio ya prototipada en otro bounded context (ver `CLAUDE.md` para
+  cuál), **no la copies**: referénciala o inyéctala, según lo que el código existente permita.
 - Si hay domain events relevantes para otro BC, decláralos en `model/events/` y haz que el
   aggregate los registre (el integration event hacia afuera lo crea el agente `interfaces`, no
   tú). Publicarlos después de guardar es responsabilidad de `infrastructure`, no tuya — tú solo
   los declaras y los registras en el aggregate.
+
+Javadoc en inglés, breve, solo donde no es obvio: en la clase del aggregate (qué representa en
+el negocio, no cómo se persiste) y en la interfaz del domain repository (a qué aggregate
+pertenece). Nada de Javadoc en getters/setters.
+
+Antes de terminar, repasa el checklist de la sección 9 de la guía que te toca a ti (anotaciones
+JPA ausentes, constructor vacío + desde command, extiende la clase base de aggregates, converter
+vs. embeddable vs. enum, métodos del repository realmente usados).
 
 Al terminar, deja un resumen breve (qué aggregates, commands, queries y servicios creaste, y qué
 métodos de repositorio esperas que `infrastructure` implemente) en `state/estado-<bc>.md` bajo

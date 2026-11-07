@@ -38,6 +38,14 @@ Dentro de `src/main/java/.../<bc>/interfaces/`:
   (lado emisor).
 - `events/` — solo si este BC emite un evento que otro BC debe escuchar.
 
+Documenta cada endpoint con `@Operation` (OpenAPI) en vez de Javadoc aparte — ya cumple el rol
+de documentación, no dupliques.
+
+Antes de terminar, repasa el checklist de la sección 9 de la guía que te toca a ti (URL en
+minúscula y plural, un resource por cada command y uno por el aggregate, un assembler REST por
+resource, el controller nunca arma el mensaje de error a mano — solo traduce el
+`ApplicationError` ya armado a HTTP).
+
 Al terminar, añade a `state/estado-<bc>.md` una sección
 `## Interfaces (dejado por el agente interfaces)` con la lista final de endpoints (método, URL,
 rol requerido, user story que cubre) — es lo que el agente `tests` va a usar para decidir qué

@@ -32,13 +32,25 @@ Dentro de `src/main/java/.../<bc>/application/`:
   Aquí van las reglas de negocio de orquestación: validaciones de unicidad, llamadas a
   interfaces externas. La publicación de los domain events tras guardar la hace el adapter de
   `infrastructure`, no esta capa — aquí solo se dispara el `save()` del repository.
-- `internal/outboundservices/` — solo los puertos "de apoyo técnico"; si el proyecto ya tiene
-  una integración similar en otro BC, sigue el mismo patrón de organización de carpetas.
+- `internal/outboundservices/` — los puertos "de apoyo técnico" (ver sección 4.4 de la guía: si
+  al negocio no le importaría que cambie el proveedor/mecanismo, el puerto va aquí, no en
+  `domain/services`), agrupados por capacidad (`email/`, `push/`, `acl/`, etc. — nunca por tipo
+  técnico de archivo). Cada carpeta de capacidad lleva junto el puerto (interfaz), los DTOs
+  planos que ese puerto usa para hablar (sin interfaz propia, son solo datos) y sus excepciones.
+  Si el proyecto ya tiene una integración similar en otro BC, sigue el mismo patrón de
+  organización. Si `outboundservices` llega a mezclar 3+ capacidades y se vuelve difícil de
+  escanear plano, subdivide por capacidad (sección 11.3 de la guía).
 - `internal/outboundservices/acl/` — un wrapper por cada BC externo que consumas, traduciendo
   los primitivos de su interfaz pública a los value objects de este BC. La interfaz pública del
   otro BC seguramente devuelve un primitivo "vacío" (p. ej. `0L`) en vez de `null`/`Optional`
   para no filtrar su modelo interno — este wrapper es quien lo traduce a `Optional` en el
   lenguaje de este BC, no antes.
+- `internal/emails/` (o el nombre que corresponda a la capacidad) — solo si una integración de
+  este BC mezcla "qué se envía" (depende del dominio: asunto, cuerpo, idioma) con "cómo se
+  transporta" (intercambiable: SMTP, push, etc.). Aquí va la lógica que decide el contenido; el
+  transporte lo implementa `infrastructure`, detrás del puerto de `outboundservices`. Si el
+  contenido es simple, arma esto inline en el command service — no crees la carpeta todavía (ver
+  sección 4.5 de la guía).
 - `internal/eventhandlers/` — si este BC debe reaccionar a un integration event de otro BC, o si
   debe traducir un domain event propio a integration event. Si el BC emisor y este BC terminan
   con una clase de handler del mismo nombre, nómbrales el bean explícitamente
@@ -47,6 +59,17 @@ Dentro de `src/main/java/.../<bc>/application/`:
   aquí, no dentro de `outboundservices`).
 - Si el BC necesita datos semilla, el command de seed + su manejo en el command service
   correspondiente (el listener que lo dispara también va aquí, en `internal/eventhandlers/`).
+
+Usa siempre las fábricas de `ApplicationError` (`notFound`, `conflict`, `businessRuleViolation`,
+`validationError`, `unexpected`), nunca un mensaje armado a mano en el command service.
+`notFound`/`conflict` van con el nombre del aggregate y el identificador o valor que chocó, no
+un mensaje genérico; `unexpected` siempre lleva el nombre de la operación (`"create-xxx"`) más el
+mensaje original de la excepción — nunca te la tragues en silencio. Todo en inglés.
+
+Antes de terminar, repasa el checklist de la sección 9 de la guía que te toca a ti (los command
+services devuelven `Result`, nunca lanzan excepciones de negocio; decidiste consistentemente
+dentro del BC si cada puerto va en `domain/services` o aquí; si `outboundservices` mezcla 3+
+capacidades, la subdividiste).
 
 Al terminar, añade a `state/estado-<bc>.md` una sección
 `## Application (dejado por el agente application)` resumiendo los command/query services, qué
